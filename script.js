@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
             timer: 'タイム/time:',
             best: 'ベストタイム/best-time:',
             difficulty: { // 難易度もオブジェクトで管理
-                easy: 'かんたん/easy',
-                normal: 'ふつう/normal',
-                hard: 'むずかしい/hard'
+                easy: 'かんたん',
+                normal: 'ふつう',
+                hard: 'むずかしい'
             }
         },
         en: {
@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ゲーム設定
     const difficulties = {
         easy: { pairs: 8, columns: 4 },
-        normal: { pairs: 20, columns: 5 },
-        hard: { pairs: 48, columns: 8 }
+        normal: { pairs: 18, columns: 6 },
+        hard: { pairs: 50, columns: 10 }
     };
 
     let currentLanguage = 'ja';
