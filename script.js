@@ -9,10 +9,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // UIのテキストを言語ごとに管理
     const uiStrings = {
-        ja: { title: '元素で神経衰弱', timer: 'タイム:', best: 'ベストタイム:' },
-        en: { title: 'Element Memory Game', timer: 'Time:', best: 'Best Time:' },
-        es: { title: 'Juego de memoria de elementos', timer: 'Tiempo:', best: 'Mejor Tiempo:' },
-        cs: { title: 'Paměťová hra s prvky', timer: 'Čas:', best: 'Nejlepší Čas:' }
+        ja: {
+            title: '元素で神経衰弱',
+            timer: 'タイム/time:',
+            best: 'ベストタイム/best-time:',
+            difficulty: { // 難易度もオブジェクトで管理
+                easy: 'かんたん/easy',
+                normal: 'ふつう/normal',
+                hard: 'むずかしい/hard'
+            }
+        },
+        en: {
+            title: 'Element Match Game',
+            timer: 'Time:', 
+            best: 'Best Time:',
+            difficulty: {
+                easy: 'Easy',
+                normal: 'Normal',
+                hard: 'Hard'
+            }
+        },
+        es: {
+            title: 'Juego de memoria de elementos',
+            timer: 'tiempo:',
+            best: 'mejor tiempo:',
+            difficulty: {
+                easy: 'fácil',
+                normal: 'normal',
+                hard: 'difícil'
+            }
+        },
+        cs: {
+            title: 'Paměťová hra s prvky',
+            timer: 'Time:', 
+            best: 'Best Time:',
+            difficulty: {
+                easy: 'Easy',
+                normal: 'Normal',
+                hard: 'Hard'
+            }
+        }
     };
 
     // 全118元素の多言語データリスト (英語, スペイン語, チェコ語)
@@ -140,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ゲーム設定
     const difficulties = {
         easy: { pairs: 8, columns: 4 },
-        normal: { pairs: 20, columns: 4 },
+        normal: { pairs: 20, columns: 5 },
         hard: { pairs: 48, columns: 8 }
     };
 
@@ -166,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ボードをクリア
         gameBoard.innerHTML = '';
-         
+        
         const settings = difficulties[currentDifficulty];
         const PAIR_COUNT = settings.pairs;
         gameBoard.style.gridTemplateColumns = `repeat(${settings.columns}, 100px)`;
