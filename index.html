@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    </head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素で神経衰弱</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
     <div id="language-switcher">
         <button data-lang="ja">日本語</button>
         <button data-lang="en">English</button>
-        <button data-lang="es">español</button>
-        <button data-lang="cs">čeština</button>
+        <button data-lang="es">Español</button>
+        <button data-lang="cs">Čeština</button>
     </div>
 
     <h1 id="game-title">元素で神経衰弱</h1>
+
+    <div id="game-controls">
+        <div id="difficulty-selector">
+            <button data-difficulty="easy">かんたん/easy</button>
+            <button data-difficulty="normal">ふつう/normal</button>
+            <button data-difficulty="hard">むずかしい/hard</button>
+        </div>
+    </div>
+
+    <div id="status-display">
+        <div id="timer-container">
+            <span id="timer-label">タイム/time:</span> <span id="timer">0.0</span>
+        </div>
+        <div id="best-time-container">
+            <span id="best-time-label">ベストタイム/best-time:</span> <span id="best-time">-</span>
+        </div>
+    </div>
     <div id="game-board"></div>
     <script src="script.js"></script>
 </body>
