@@ -93,5 +93,12 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* ボタンにマウスを乗せたときのスタイル */
+#difficulty-selector button:hover {
+    background-color: #f0f0f0; /* 少し色を変える */
+}
 
-
+/* 選択中のボタンにマウスを乗せたときのスタイル */
+#difficulty-selector button.active:hover {
+    background-color: #3c6e99; /* 少し濃い色にする */
+}
