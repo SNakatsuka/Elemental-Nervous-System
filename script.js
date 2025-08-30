@@ -1,24 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // UI要素を取得
+    // UI要素の取得
     const gameBoard = document.getElementById('game-board');
     const gameTitle = document.getElementById('game-title');
     const langButtons = document.querySelectorAll('#language-switcher button');
+    const difficultyButtons = document.querySelectorAll('#difficulty-selector button');
+    const timerDisplay = document.getElementById('timer');
+    const bestTimeDisplay = document.getElementById('best-time');
 
     // UIのテキストを言語ごとに管理
     const uiStrings = {
-        ja: {
-            title: '元素で神経衰弱'
-        },
-        en: {
-            title: 'Element Memory Game'
-        },
-        es: {
-            title: 'Juego de memoria de elementos'
-        },
-        en: {
-            title: 'Paměťová hra s prvky'
-        }
-    };    // 全118元素の多言語データリスト (英語, スペイン語, チェコ語)
+        ja: { title: '元素で神経衰弱', timer: 'タイム:', best: 'ベストタイム:' },
+        en: { title: 'Element Memory Game', timer: 'Time:', best: 'Best Time:' },
+        es: { title: 'Juego de memoria de elementos', timer: 'Tiempo:', best: 'Mejor Tiempo:' },
+        cs: { title: 'Paměťová hra s prvky', timer: 'Čas:', best: 'Nejlepší Čas:' }
+    };
+
+    // 全118元素の多言語データリスト (英語, スペイン語, チェコ語)
     const allElements = [
         { symbol: 'H', names: { en: 'Hydrogen', es: 'Hidrógeno', cs: 'Vodík' } },
         { symbol: 'He', names: { en: 'Helium', es: 'Helio', cs: 'Helium' } },
@@ -140,124 +137,170 @@ document.addEventListener('DOMContentLoaded', () => {
         { symbol: 'Og', names: { en: 'Oganesson', es: 'Oganesón', cs: 'Oganesson' } }
     ];
 
-    let currentLanguage = 'ja'; // 初期言語
+    // ゲーム設定
+    const difficulties = {
+        easy: { pairs: 8, columns: 4 },
+        normal: { pairs: 20, columns: 4 },
+        hard: { pairs: 48, columns: 8 }
+    };
 
-    // ゲームで使うペアの数（この数字を変えると難易度が変わる）
-    const PAIR_COUNT = 10; // 例: 10ペア (合計20枚のカード)
+    let currentLanguage = 'ja';
+    let currentDifficulty = 'easy';
+
+    // タイマー関連の変数
+    let timerInterval;
+    let startTime;
+    let matchedPairs = 0;
 
     /**
      * ゲームを開始または再描画するメインの関数
-     * @param {string} lang - 表示する言語コード (e.g., 'ja', 'en')
      */
-    function startGame(lang) {
-        currentLanguage = lang;
-        
-        // UIテキストを更新
-        gameTitle.textContent = uiStrings[lang].title;
+    function startGame() {
+        // UIテキスト更新
+        updateUIText();
+
+        // 以前のタイマーを停止
+        stopTimer();
+        timerDisplay.textContent = '0.0';
+        matchedPairs = 0;
 
         // ボードをクリア
         gameBoard.innerHTML = '';
-        
-        // カードをシャッフルする関数 (Fisher-Yatesアルゴリズム)
-        function shuffle(array) {
-            let currentIndex = array.length;
-            while (currentIndex !== 0) {
-                let randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-            }
-            return array;
-        }
-    
-        // 全元素リストから、ゲームで使う分だけランダムに選ぶ
-        const gameElements = shuffle([...allElements]).slice(0, PAIR_COUNT);
-        
-        // 選ばれた元素でカードのペアを作成
+         
+        const settings = difficulties[currentDifficulty];
+        const PAIR_COUNT = settings.pairs;
+        gameBoard.style.gridTemplateColumns = `repeat(${settings.columns}, 100px)`;
+
+        const shuffleArray = (array) => array.sort(() => 0.5 - Math.random());
+        const gameElements = shuffleArray([...allElements]).slice(0, PAIR_COUNT);
+
         let cardsArray = [];
         gameElements.forEach((el, index) => {
-            cardsArray.push({ type: 'symbol', value: el.symbol, matchId: index });
-            cardsArray.push({ type: 'name', value: el.name, matchId: index });
+            cardsArray.push({ value: el.symbol, matchId: index });
+            cardsArray.push({ value: el.names[currentLanguage], matchId: index });
         });
-    
-        // カードの順番をシャッフル
-        shuffle(cardsArray);
-        
+        shuffleArray(cardsArray);
+
         let firstCard = null;
         let secondCard = null;
-        let lockBoard = false; // ボードをロックして連続クリックを防ぐ
-    
-        // カードをボードに生成
-        function createBoard() {
-            cardsArray.forEach(item => {
-                const card = document.createElement('div');
-                card.classList.add('card');
-                card.dataset.matchId = item.matchId;
-    
-                card.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-back">?</div>
-                        <div class="card-front">${item.value}</div>
-                    </div>
-                `;
-    
-                card.addEventListener('click', flipCard);
-                gameBoard.appendChild(card);
-            });
-        }
-    
+        let lockBoard = false;
+        let gameStarted = false;
+
+        cardsArray.forEach(item => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.matchId = item.matchId;
+            card.innerHTML = `<div class="card-inner"><div class="card-back">?</div><div class="card-front">${item.value}</div></div>`;
+            card.addEventListener('click', flipCard);
+            gameBoard.appendChild(card);
+        });
+
         function flipCard() {
-            if (lockBoard) return;
-            if (this === firstCard) return;
-    
-            this.classList.add('flipped');
-    
-            if (!firstCard) {
-                firstCard = this;
-                return;
+            if (lockBoard || this.classList.contains('flipped') || this === firstCard) return;
+            
+            if (!gameStarted) {
+                startTimer();
+                gameStarted = true;
             }
-    
+
+            this.classList.add('flipped');
+            if (!firstCard) { firstCard = this; return; }
             secondCard = this;
             lockBoard = true;
-    
             checkForMatch();
         }
-    
+
         function checkForMatch() {
             const isMatch = firstCard.dataset.matchId === secondCard.dataset.matchId;
             isMatch ? disableCards() : unflipCards();
         }
-    
+
         function disableCards() {
             firstCard.removeEventListener('click', flipCard);
             secondCard.removeEventListener('click', flipCard);
             firstCard.classList.add('matched');
             secondCard.classList.add('matched');
+            matchedPairs++;
+            if (matchedPairs === PAIR_COUNT) {
+                stopTimer();
+                updateBestTime();
+            }
             resetBoard();
         }
-    
+
         function unflipCards() {
             setTimeout(() => {
                 firstCard.classList.remove('flipped');
                 secondCard.classList.remove('flipped');
                 resetBoard();
-            }, 1200); // 1.2秒後にカードを戻す
+            }, 1000);
         }
-    
+
         function resetBoard() {
             [firstCard, secondCard, lockBoard] = [null, null, false];
         }
     }
 
-    // 言語切り替えボタンにイベントリスナーを設定
+    // --- タイマー機能 ---
+    function startTimer() {
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            timerDisplay.textContent = elapsedTime.toFixed(1);
+        }, 100);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    // --- ベストタイム機能 ---
+    function updateBestTime() {
+        const elapsedTime = parseFloat(timerDisplay.textContent);
+        const bestTimeKey = `bestTime_${currentDifficulty}_${currentLanguage}`;
+        const currentBest = parseFloat(localStorage.getItem(bestTimeKey)) || Infinity;
+
+        if (elapsedTime < currentBest) {
+            localStorage.setItem(bestTimeKey, elapsedTime);
+            displayBestTime();
+        }
+    }
+
+    function displayBestTime() {
+        const bestTimeKey = `bestTime_${currentDifficulty}_${currentLanguage}`;
+        const bestTime = localStorage.getItem(bestTimeKey);
+        bestTimeDisplay.textContent = bestTime ? `${parseFloat(bestTime).toFixed(1)}` : '-';
+    }
+    
+    // --- UI更新とイベントリスナー ---
+    function updateUIText() {
+        const strings = uiStrings[currentLanguage];
+        gameTitle.textContent = strings.title;
+        document.getElementById('timer-label').textContent = `${strings.timer} `;
+        document.getElementById('best-time-label').textContent = `${strings.best} `;
+    }
+
     langButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            const selectedLang = e.target.dataset.lang;
-            if (selectedLang !== currentLanguage) {
-                startGame(selectedLang);
-            }
+            currentLanguage = e.target.dataset.lang;
+            startGame();
+            displayBestTime();
         });
     });
 
-    // 初期ゲームの開始
-    startGame(currentLanguage);
+    difficultyButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            currentDifficulty = e.target.dataset.difficulty;
+            // アクティブなボタンのスタイルを更新
+            difficultyButtons.forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            startGame();
+            displayBestTime();
+        });
+    });
+
+    // --- 初期化 ---
+    document.querySelector(`#difficulty-selector button[data-difficulty='${currentDifficulty}']`).classList.add('active');
+    startGame();
+    displayBestTime();
 });
