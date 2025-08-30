@@ -8,7 +8,6 @@ body {
 
 #game-board {
     display: grid;
-    grid-template-columns: repeat(4, 100px); /* 4列にカードを並べる */
     gap: 10px;
 }
 
@@ -59,3 +58,40 @@ body {
     cursor: default;
     opacity: 0.5; /* ペアが揃ったら半透明に */
 }
+
+/* --- ゲームコントロールとステータス表示のスタイル --- */
+#game-controls, #status-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    gap: 20px;
+}
+
+#difficulty-selector button {
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #4682b4;
+    background-color: white;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0 5px;
+}
+
+#difficulty-selector button.active {
+    background-color: #4682b4;
+    color: white;
+    font-weight: bold;
+}
+
+#status-display div {
+    font-size: 18px;
+    background-color: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+
